@@ -410,3 +410,6 @@ $RECYCLE.BIN/
 
 #Ignore some files
 .env
+
+#Ignore generated code by prisma
+facturia-api/src/generated/

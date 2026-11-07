@@ -1,0 +1,62 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "cjs"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Proveedor {
+  id                String    @id @default(uuid()) @db.Uuid
+  nombre            String    @db.VarChar(200)
+  nombreNormalizado String    @unique @map("nombre_normalizado") @db.VarChar(200)
+  nit               String?   @db.VarChar(30)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  facturas          Factura[]
+
+  @@map("proveedor")
+}
+
+model Documento {
+  id                 String   @id @default(uuid()) @db.Uuid
+  nombreOriginal     String   @map("nombre_original") @db.VarChar(255)
+  mimeType           String   @map("mime_type") @db.VarChar(50)
+  tamanoBytes        Int      @map("tamano_bytes")
+  rutaAlmacenamiento String   @map("ruta_almacenamiento") @db.VarChar(500)
+  hashSha256         String   @map("hash_sha256") @db.Char(64)
+  respuestaLlm       Json     @map("respuesta_llm") @db.JsonB
+  modeloLlm          String   @map("modelo_llm") @db.VarChar(100)
+  fechaCarga         DateTime @default(now()) @map("fecha_carga") @db.Timestamptz(3)
+  factura            Factura?
+
+  @@index([hashSha256])
+  @@map("documento")
+}
+
+model Factura {
+  id                 String    @id @default(uuid()) @db.Uuid
+  proveedorId        String    @map("proveedor_id") @db.Uuid
+  documentoId        String    @unique @map("documento_id") @db.Uuid
+  numeroFactura      String    @map("numero_factura") @db.VarChar(100)
+  fechaEmision       DateTime  @map("fecha_emision") @db.Date
+  fechaLimitePago    DateTime? @map("fecha_limite_pago") @db.Date
+  valorTotal         Decimal   @map("valor_total") @db.Decimal(18, 2)
+  moneda             String    @db.Char(3)
+  numeroCliente      String?   @map("numero_cliente") @db.VarChar(100)
+  editadaManualmente Boolean   @default(false) @map("editada_manualmente")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  proveedor Proveedor @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+  documento Documento @relation(fields: [documentoId], references: [id], onDelete: Restrict)
+
+  @@unique([proveedorId, numeroFactura], where: raw("deleted_at IS NULL"), map: "factura_proveedor_numero_activa_key")
+  @@index([fechaEmision])
+  @@index([proveedorId, fechaEmision])
+  @@map("factura")
+}
