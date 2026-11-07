@@ -42,7 +42,7 @@ Aplicación web *end-to-end* para cargar facturas de servicios (PDF/PNG/JPG), ex
 | Capa | Tecnología |
 |---|---|
 | Frontend (`facturia-web`) | React 18+ · TypeScript · Vite · React Router · React Hook Form + Zod · TanStack Query · Axios |
-| Backend (`facturia-api`) | Node.js 22 · TypeScript · Express · Multer · Zod · Prisma |
+| Backend (`facturia-api`) | Node.js 26 LTS · TypeScript · Express · Multer · Zod · Prisma |
 | Base de datos | PostgreSQL 17 |
 | LLM | Google Gemini API (detrás de la interfaz `LlmClient`, intercambiable) |
 | Pruebas | Vitest · Supertest |
@@ -53,6 +53,27 @@ Aplicación web *end-to-end* para cargar facturas de servicios (PDF/PNG/JPG), ex
 ## 3. Arquitectura
 
 SPA en React que consume una API REST en Express, organizada en capas (presentación → lógica → datos) con inversión de dependencias: la lógica define *ports* (`FacturaRepository`, `LlmClient`, `FileStorage`) y la capa de datos los implementa.
+
+### 3.1 Modelo entidad relación para la BD
+#### Restricciones e índices
+
+#### Factura
+- UNIQUE (proveedor_id, numero_factura) WHERE deleted_at IS NULL — anti-duplicados con borrado lógico (índice parcial)
+- UNIQUE (documento_id) — relación 1:1 con documento
+- FK proveedor_id → proveedor.id · FK documento_id → documento.id (ON DELETE RESTRICT)
+- INDEX (fecha_emision) · INDEX (proveedor_id, fecha_emision)
+- CHECK valor_total > 0 · CHECK moneda ~ '^[A-Z]{3}$'
+- CHECK fecha_limite_pago IS NULL OR fecha_limite_pago >= fecha_emision
+
+#### Proveedor
+- UNIQUE (nombre_normalizado)
+
+#### Documento
+- INDEX (hash_sha256)
+- CHECK tamano_bytes > 0 AND tamano_bytes <= 10485760 (10 MB)
+- CHECK mime_type IN (application/pdf, image/png, image/jpeg)
+
+![Diagrama entidad-relación ](image/PwC_ER_View.drawio.png)
 
 ### 3.1 Vista de componentes y conectores
 
