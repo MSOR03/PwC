@@ -1,0 +1,19 @@
+# Dependencies
+node_modules
+
+# Build and test output
+dist
+build
+coverage
+
+# Lock files (managed by npm)
+package-lock.json
+
+# Generated and runtime files
+uploads
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
