@@ -10,21 +10,37 @@ const isoDate = z
 
 const emptyToUndefined = (value: unknown) => (value === '' ? undefined : value)
 
+const dateRangeFields={
+    fechaDesde: z.preprocess(emptyToUndefined, isoDate.optional()),
+    fechaHasta: z.preprocess(emptyToUndefined, isoDate.optional())
+}
+
+const isValidRange=(q: { fechaDesde?: string; fechaHasta?: string }) => {
+    return !q.fechaDesde || !q.fechaHasta || q.fechaDesde <= q.fechaHasta;
+}
+
+const rangeError={
+    message: 'fechaDesde must be before or equal to fechaHasta',
+    path: ['fechaHasta']
+}
+
 export const idParamsSchema = z.object({
     id: z.string().uuid('Must be a valid UUID')
 });
 
-export const invoiceSchema = z.object({
+export const listInvoiceQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(100).default(10),
     proveedor: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
-    fechaDesde: z.preprocess(emptyToUndefined, isoDate.optional()),
-    fechaHasta: z.preprocess(emptyToUndefined, isoDate.optional()),
+    ...dateRangeFields,
 })
-    .refine((q) => !q.fechaDesde || !q.fechaHasta || q.fechaDesde <= q.fechaHasta, {
-        message: 'fechaDesde must be before or equal to fechaHasta',
-        path: ['fechaHasta'],
-    });
+    .refine(isValidRange, rangeError);
+
+
+export const summaryQuerySchema = z.object({
+    ...dateRangeFields,
+})
+    .refine(isValidRange, rangeError);
 
 export const updateInvoiceBodySchema = z.object({
 
@@ -58,7 +74,8 @@ export const updateInvoiceBodySchema = z.object({
         .transform((value) => value || null)
 });
 
-export type ListInvoicesQuery = z.infer<typeof invoiceSchema>;
+export type ListInvoicesQuery = z.infer<typeof listInvoiceQuerySchema>;
 export type UpdateInvoiceBody = z.infer<typeof updateInvoiceBodySchema>;
 export type IdParams = z.infer<typeof idParamsSchema>;
+export type SummaryQuery = z.infer<typeof summaryQuerySchema>;
 

@@ -1,6 +1,6 @@
 
 import { DuplicateInvoiceError } from '../../business/domain/errors';
-import type { Factura, InvoiceFilters, Page } from '../../business/domain/invoice';
+import type { Factura, InvoiceFilters, Page, DateRangeFilters, InvoiceSummary } from '../../business/domain/invoice';
 import type {
   CreateInvoiceInput,
   InvoiceRepository,
@@ -194,4 +194,54 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
       throw error;
     }
   }
+
+  async summary({ fechaDesde, fechaHasta }: DateRangeFilters): Promise<InvoiceSummary> {
+    // Parameterized conditions: values go as SQL parameters, never concatenated
+    const conditions = [Prisma.sql`f.deleted_at IS NULL`];
+    if (fechaDesde) conditions.push(Prisma.sql`f.fecha_emision >= ${fechaDesde}::date`);
+    if (fechaHasta) conditions.push(Prisma.sql`f.fecha_emision <= ${fechaHasta}::date`);
+    const where = Prisma.join(conditions, ' AND ');
+
+    const rows = await this.prisma.$queryRaw<
+      { proveedor_id: string; proveedor: string; mes: string; moneda: string; cantidad: number; total: string }[]
+    >`
+      SELECT p.id                                                AS proveedor_id,
+             p.nombre                                            AS proveedor,
+             to_char(date_trunc('month', f.fecha_emision), 'YYYY-MM') AS mes,
+             f.moneda                                            AS moneda,
+             COUNT(*)::int                                       AS cantidad,
+             SUM(f.valor_total)::text                            AS total
+      FROM factura f
+      JOIN proveedor p ON p.id = f.proveedor_id
+      WHERE ${where}
+      GROUP BY p.id, p.nombre, mes, f.moneda
+      ORDER BY mes DESC, p.nombre, f.moneda
+    `;
+
+    const totals = await this.prisma.$queryRaw<
+      { moneda: string; cantidad: number; total: string }[]
+    >`
+      SELECT f.moneda                  AS moneda,
+             COUNT(*)::int             AS cantidad,
+             SUM(f.valor_total)::text  AS total
+      FROM factura f
+      WHERE ${where}
+      GROUP BY f.moneda
+      ORDER BY f.moneda
+    `;
+
+    return {
+      data: rows.map((row) => ({
+        proveedorId: row.proveedor_id,
+        proveedor: row.proveedor,
+        mes: row.mes,
+        moneda: row.moneda,
+        cantidad: row.cantidad,
+        total: row.total,
+      })),
+      totalsByCurrency: totals,
+    };
+  }
+
+
 }

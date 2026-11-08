@@ -50,3 +50,29 @@ export interface Page<T> {
   total: number;
   totalPages: number;
 }
+
+export interface DateRangeFilters {
+  fechaDesde?: string; // YYYY-MM-DD
+  fechaHasta?: string; // YYYY-MM-DD
+}
+
+// One row per provider + month + currency
+export interface SummaryRow {
+  proveedorId: string;
+  proveedor: string;
+  mes: string; // YYYY-MM
+  moneda: string;
+  cantidad: number;
+  total: string; // decimal as string, never summed across currencies
+}
+
+export interface CurrencyTotal {
+  moneda: string;
+  cantidad: number;
+  total: string;
+}
+
+export interface InvoiceSummary {
+  data: SummaryRow[];
+  totalsByCurrency: CurrencyTotal[];
+}

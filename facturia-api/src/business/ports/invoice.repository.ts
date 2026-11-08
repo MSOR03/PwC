@@ -2,7 +2,7 @@
  * Page<factura> represents a paginated list of invoices
  * InvoiceFilters represents the filters that can be applied when listing invoices
  */
-import type { ExtractedInvoice, Factura,InvoiceData,InvoiceFilters,Page } from '../domain/invoice';
+import type { ExtractedInvoice, Factura,InvoiceData,InvoiceFilters,Page , DateRangeFilters,InvoiceSummary} from '../domain/invoice';
 
 export interface NewDocument {
   nombreOriginal: string;
@@ -46,4 +46,7 @@ export interface InvoiceRepository {
 
   // Soft deletes an active (not deleted) invoice by its ID
   softDelete(id: string): Promise<void>;
+
+  //Returns a summary of invoices based on the provided date range filters
+  summary(filters: DateRangeFilters): Promise<InvoiceSummary>;
 }
