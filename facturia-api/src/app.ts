@@ -2,7 +2,7 @@ import express from "express";
 import type {Container} from './container';
 import { errorHandler } from "./presentation/middlewares/errorHandler.middleware";
 import {notFound} from "./presentation/middlewares/notFound.middleware";
-
+import { invoiceRoutes } from "./presentation/routes/invoice.reoutes";
 
 export function createApp(container: Container){
     const app=express();
@@ -18,6 +18,7 @@ export function createApp(container: Container){
         res.json({status: 'ok',database:'up'});
     });
     
+    app.post('/api/facturas', invoiceRoutes(container.invoiceController));
     //If a route is not found, use the notFound middleware
     app.use(notFound);
 

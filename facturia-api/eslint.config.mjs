@@ -5,13 +5,20 @@ import prettier from 'eslint-config-prettier';
 
 
 export default [
-    {ignores: ['dist', 'node_modules', 'coverage','tsconfig.json', 'src/generated']},
+    { ignores: ['dist', 'node_modules', 'coverage', 'tsconfig.json', 'src/generated'] },
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {
-        languageOptions: {globals: globals.node},
+        languageOptions: { globals: globals.node },
         rules: {
-            '@typescript-eslint/no-unused-vars': ['error',{argsIgnorePattern: '^_'}],
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                    ignoreRestSiblings: true,
+                },
+            ],
         },
     },
     prettier,

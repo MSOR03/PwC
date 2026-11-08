@@ -43,11 +43,11 @@ export class UnsupportedMediaTypeError extends AppError {
     readonly code = 'UNSUPPORTED_MEDIA_TYPE';
 }
 
-export class ExtractionFailedError extends AppError {
+export class ExtractionError extends AppError {
     readonly code = 'EXTRACTION_FAILED';
 }
 
-export class LLMProviderError extends AppError {
+export class LlmProviderError extends AppError {
     readonly code = 'LLM_PROVIDER';
 }
 
