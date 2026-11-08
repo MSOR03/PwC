@@ -4,17 +4,14 @@ import type { AllowedMimeType } from '../domain/file';
 import type { ExtractedInvoice } from '../domain/invoice';
 import { normalizeAmount } from '../domain/money';
 import type { LlmClient } from '../ports/llm.client'
+import { isValidIsoDate } from '../domain/date';
 
 
-const isRealDate = (value: string) => {
-    const date = new Date(`${value}T00:00:00`)
-    return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value)
-}
 
 const dateSchema = z.
     string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
-    .refine(isRealDate, 'Invalid date');
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Must use YYYY-MM-DD format')
+    .refine(isValidIsoDate, 'Invalid date');
 
 //LLM response format
 const llmOutputSchema = z.object({

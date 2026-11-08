@@ -1,16 +1,18 @@
-import {DuplicateInvoiceError} from '../../business/domain/errors';
-import type {Factura} from '../../business/domain/invoice';
-import type{
-    CreateInvoiceInput,
-    InvoiceRepository,
+
+import { DuplicateInvoiceError } from '../../business/domain/errors';
+import type { Factura, InvoiceFilters, Page } from '../../business/domain/invoice';
+import type {
+  CreateInvoiceInput,
+  InvoiceRepository,
+  UpdateInvoiceInput,
 } from '../../business/ports/invoice.repository';
-import {Prisma,type PrismaClient} from '../../generated/prisma/client';
+import { Prisma, type PrismaClient } from '../../generated/prisma/client';
 
 
-const invoiceInclude ={proveedor:true,documento:true} satisfies Prisma.FacturaInclude;
-type InvoiceRow=Prisma.FacturaGetPayload<{include: typeof invoiceInclude}>;
+const invoiceInclude = { proveedor: true, documento: true } satisfies Prisma.FacturaInclude;
+type InvoiceRow = Prisma.FacturaGetPayload<{ include: typeof invoiceInclude }>;
 
-const toDateOnly=(date:Date)=>date.toISOString().slice(0,10);
+const toDateOnly = (date: Date) => date.toISOString().slice(0, 10);
 
 // Converts the Prisma model into the domain type (the business layer never sees Prisma)
 export function toFactura(row: InvoiceRow): Factura {
@@ -37,19 +39,118 @@ export function toFactura(row: InvoiceRow): Factura {
 }
 
 export class PrismaInvoiceRepository implements InvoiceRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
-  async existsActive(proveedorNormalizado: string, numeroFactura: string): Promise<boolean> {
+  async existsActive(
+    proveedorNormalizado: string,
+    numeroFactura: string,
+    excludeId?: string
+  ): Promise<boolean> {
     const count = await this.prisma.factura.count({
       where: {
         numeroFactura,
         deletedAt: null,
         proveedor: { nombreNormalizado: proveedorNormalizado },
+        ...(excludeId ? { id: { not: excludeId } } : {})
       },
     });
     return count > 0;
   }
 
+  async list({
+    page,
+    pageSize,
+    proveedor,
+    fechaDesde,
+    fechaHasta
+  }: InvoiceFilters): Promise<Page<Factura>> {
+
+    const where: Prisma.FacturaWhereInput = {
+      deletedAt: null,
+      ...(proveedor ? { proveedor: { nombreNormalizado: { contains: proveedor } } } : {}),
+      ...(fechaDesde || fechaHasta ? {
+        fechaEmision: {
+          ...(fechaDesde ? { gte: new Date(fechaDesde) } : {}),
+          ...(fechaHasta ? { lte: new Date(fechaHasta) } : {}),
+        },
+      }
+        : {}),
+    };
+
+    // Fetch the list of invoices and the total count in a single transaction for pagination purposes.
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.factura.findMany({
+        where,
+        include: invoiceInclude,
+        orderBy: [{ fechaEmision: 'desc' }, { createdAt: 'desc' }]
+      }),
+      this.prisma.factura.count({ where }),
+    ]);
+
+    return {
+      data: rows.map(toFactura),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  // Find an active invoice by its ID.
+  async findActiveById(id: string): Promise<Factura | null> {
+    const row = await this.prisma.factura.findFirst({
+      where: { id, deletedAt: null },
+      include: invoiceInclude,
+    });
+    return row ? toFactura(row) : null;
+  }
+
+  //Update an existing invoice by its ID, handling potential duplicate invoice errors.
+  async update(id: string, { invoice, proveedorNormalizado }: UpdateInvoiceInput): Promise<Factura> {
+    try {
+      const row = await this.prisma.$transaction(async (tx) => {
+        const proveedor = await tx.proveedor.upsert({
+          where: { nombreNormalizado: proveedorNormalizado },
+          update: {},
+          create: { nombre: invoice.proveedor, nombreNormalizado: proveedorNormalizado },
+        });
+
+        return tx.factura.update({
+          where: { id },
+          data: {
+            proveedorId: proveedor.id,
+            numeroFactura: invoice.numeroFactura,
+            fechaEmision: new Date(invoice.fechaEmision),
+            fechaLimitePago: invoice.fechaLimitePago ? new Date(invoice.fechaLimitePago) : null,
+            valorTotal: invoice.valorTotal,
+            moneda: invoice.moneda,
+            numeroCliente: invoice.numeroCliente,
+            editadaManualmente: true,
+          },
+          include: invoiceInclude,
+        });
+      });
+
+      return toFactura(row);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new DuplicateInvoiceError(
+          `Ya existe la factura ${invoice.numeroFactura} del proveedor ${invoice.proveedor}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  // Soft delete an invoice by setting its deletedAt timestamp.
+  async softDelete(id: string): Promise<void> {
+    await this.prisma.factura.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  // Create a new invoice along with its associated document.
   async createWithDocument({
     invoice,
     proveedorNormalizado,

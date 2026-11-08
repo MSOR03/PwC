@@ -32,3 +32,21 @@ export interface Factura {
   createdAt: string;
   updatedAt: string;
 }
+
+export type InvoiceData=ExtractedInvoice;
+
+export interface InvoiceFilters {
+  page: number;
+  pageSize: number;
+  proveedor?: string;
+  fechaDesde?: string; // YYYY-MM-DD
+  fechaHasta?: string; // YYYY-MM-DD
+}
+
+export interface Page<T> {
+  data: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
