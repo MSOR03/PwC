@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "vitest run tests/unit --passWithNoTest",
+    "test": "vitest run tests/unit --passWithNoTests",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
