@@ -1,9 +1,21 @@
 import { createApp } from "./app";
+import {env} from './config/env';
+import { buildContainer } from "./container";
 
-const port =Number(process.env.PORT ?? 3000);
+const container = buildContainer();
 
-const app=createApp() //Create an instance from createApp
+const server = createApp(container).listen(env.PORT,()=>{
+    console.log(`facturia-api listening on http://localhost:${env.PORT}`)
+}) 
 
-app.listen(port,()=>{
-    console.log(`facturia-api listening on http://localhost:${port}`)
-});
+const shutdown = () => {
+
+    server.close(async () => {
+        await container.prisma.$disconnect();
+        process.exit(0);
+    });
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
