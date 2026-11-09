@@ -25,11 +25,11 @@ export class InvoiceService {
     // 3. Duplicate check by normalized provider + invoice number (409)
     const proveedorNormalizado = normalizeProviderName(data.proveedor);
     if (!proveedorNormalizado) {
-      throw new ExtractionError('No se pudo identificar el proveedor de la factura');
+      throw new ExtractionError('The invoice provider could not be identified');
     }
     if (await this.repository.existsActive(proveedorNormalizado, data.numeroFactura)) {
       throw new DuplicateInvoiceError(
-        `Ya existe la factura ${data.numeroFactura} del proveedor ${data.proveedor}`,
+        `Invoice ${data.numeroFactura} for provider '${data.proveedor}' already exists`,
       );
     }
 
@@ -100,7 +100,7 @@ export class InvoiceService {
     // Check for duplicate active invoice for the same provider and invoice number
     if (await this.repository.existsActive(proveedorNormalizado, data.numeroFactura, id)) {
       throw new DuplicateInvoiceError(
-        `Invoice ${data.numeroFactura} for provider ${data.proveedor} already exists`
+        `Invoice ${data.numeroFactura} for provider '${data.proveedor}' already exists`
       );
     }
 
