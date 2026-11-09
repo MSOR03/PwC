@@ -6,8 +6,8 @@ import {httpClient} from "./httpClient";
 export const facturasServices={
     async upload(file:File,onProgress?: (progress: number) => void):Promise<Factura > {
         const formData = new FormData();
-        formData.append("file", file);
-        const {data} =await httpClient.post<Factura>("/facturas/upload", formData, {
+        formData.append("archivo", file);
+        const {data} =await httpClient.post<Factura>("/facturas", formData, {
             onUploadProgress:(event)=>{
                 if(event.total && onProgress) onProgress(Math.round((event.loaded / event.total) * 100));
 
