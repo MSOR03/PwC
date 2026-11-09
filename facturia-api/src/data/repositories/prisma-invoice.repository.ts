@@ -82,7 +82,10 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
       this.prisma.factura.findMany({
         where,
         include: invoiceInclude,
-        orderBy: [{ fechaEmision: 'desc' }, { createdAt: 'desc' }]
+        orderBy: [{ fechaEmision: 'desc' }, { createdAt: 'desc' }],
+        // Pagination resolved in the database (LIMIT / OFFSET), never in memory
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       }),
       this.prisma.factura.count({ where }),
     ]);
@@ -135,7 +138,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new DuplicateInvoiceError(
-          `Ya existe la factura ${invoice.numeroFactura} del proveedor ${invoice.proveedor}`,
+          `Invoice ${invoice.numeroFactura} for provider '${invoice.proveedor}' already exists`,
         );
       }
       throw error;
@@ -188,7 +191,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
       // Unique violation: another request saved the same invoice between the check and the insert
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new DuplicateInvoiceError(
-          `Ya existe la factura ${invoice.numeroFactura} del proveedor ${invoice.proveedor}`,
+          `Invoice ${invoice.numeroFactura} for provider '${invoice.proveedor}' already exists`,
         );
       }
       throw error;
