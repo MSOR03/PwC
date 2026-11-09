@@ -77,13 +77,33 @@ SPA en React que consume una API REST en Express, organizada en capas (presentac
 
 ### 3.1 Vista de componentes y conectores
 
+El sistema planteado tendra 3 componentes , distribuidos de la siguiente manera:
+- facturia-web de presentación.
+- facturia-api para la capa de logica
+- facturia-db como base de datos en Postgres.
+
+El componente de presentaón se conecta al de logica mediante conexion HTTP con un conexion REST, la logica y la base de datos se conecta mediante TCP.
+
+El servicio de LLM es externo al sistema y se conecta mediante
+este a traves de conexion HTTP.
 ![Vista de componentes y conectores](image/PwC_C%26C_View.drawio.png)
 
 ### 3.2 Vista de despliegue
 
+Este proyecto por el momento se esta desplegando local con Docker Compose, para ello se tiene un nodo(Equipo anfitrion) y
+tres contenedores correspondiente a los componentes mencionados.
+
+No existe segmentación de red así que todos los componentes estan bajo la Red facturia-net .
+
 ![Vista de despliegue](image/PwC_Deployment_View.drawio.png)
 
 ### 3.3 Vista de capas
+El sistema esta divididor en tres capas siendo estas las siguientes , el acceso esta claramente definido con las gerarquias:
+- Capa de presentación
+- Capa de logicá
+- Capa de datos
+
+Como se puede ver por dentro cada capa tiene sus subcapas claramente definidadas, como son la presentacion , el manejo del servidor y el consumo de API, asi como los controladores , la logica de negocio y el acceso a datos e infraestructura.
 
 ![Vista de capas](image/PwC_shapes_view.drawio.png)
 
