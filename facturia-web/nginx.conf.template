@@ -9,11 +9,13 @@ server{
     # Set the maximum allowed size for client request bodies
     client_max_body_size 11M;
 
-    #API proxy: the browser sees a single origin
+    # API proxy: the browser sees a single origin.
+    # Target comes from API_UPSTREAM (Docker: http://api:3000, Railway: public API URL)
     location /api/ {
-        proxy_pass http://api:3000;
+        proxy_pass ${API_UPSTREAM};
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
+        proxy_set_header Host $proxy_host;   # upstream host name, needed by Railway routing
+        proxy_ssl_server_name on;            # send SNI when the upstream is https
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 120s; # the LLM can take up to ~60 s
