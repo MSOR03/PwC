@@ -24,7 +24,7 @@ const llmOutputSchema = z.object({
         .string()
         .trim()
         .toUpperCase()
-        .regex(/^[A-Z]{3}$/, 'Debe ser un código ISO 4217'),
+        .regex(/^[A-Z]{3}$/, 'Must be an ISO 4217 currency code'),
     numeroCliente: z.string().trim().min(1).nullish(),
 });
 
@@ -50,8 +50,8 @@ export function parseExtraction(raw: unknown): ExtractedInvoice {
     const data = parsed.data;
     const valorTotal = normalizeAmount(data.valorTotal);
     if (!valorTotal) {
-        throw new ExtractionError('El valor total extraído no es un número positivo válido', [
-            { field: 'valorTotal', message: `Valor recibido: ${String(data.valorTotal)}` },
+        throw new ExtractionError('The extracted total amount is not a valid positive number', [
+            { field: 'valorTotal', message: `Received value: ${String(data.valorTotal)}` },
         ]);
     }
 

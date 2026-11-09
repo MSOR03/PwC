@@ -2,7 +2,7 @@ import type { AllowedMimeType } from '../domain/file';
 
 export interface LlmExtractionResult {
   rawResponse: unknown; // what the model returned, not validated yet
-  model: string; // e.g. "gemini-2.5-flash", saved for auditing
+  model: string; // e.g. "gemini-3.5-flash", saved for auditing
 }
 
 export interface LlmClient {

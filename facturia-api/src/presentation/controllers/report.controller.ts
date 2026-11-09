@@ -5,8 +5,9 @@ import type { SummaryQuery } from '../schemas/invoice.schema';
 export class ReportController {
     constructor(private readonly reportService: ReportService) { }
 
+    // Uses the query already parsed by the validate middleware (empty values removed, dates checked)
     summary = async (_req: Request, res: Response) => {
-        const query: SummaryQuery = _req.query as SummaryQuery;
+        const query = res.locals.query as SummaryQuery;
         res.json(await this.reportService.summary(query));
     }
 

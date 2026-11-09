@@ -1,16 +1,15 @@
 name: facturia
 
 services:
-  db: 
+  db:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-facturia}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-facturia}
-
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432" # only for local development tools
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,14 +17,52 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - net
 
+  api:
+    build: ./facturia-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-facturia}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-facturia}?schema=public
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash}
+      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-60000}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - net
+
+  web:
+    build: ./facturia-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
     networks:
       - net
 
 volumes:
   pgdata:
     name: facturia-pgdata
-  
+  uploads:
+    name: facturia-uploads
+
 networks:
   net:
     name: facturia-net
