@@ -15,7 +15,8 @@ export function useUploadFactura() {
            return facturasServices.upload(file,setProgress)
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['facturas'] })
+            queryClient.invalidateQueries({ queryKey: ['facturas'] });
+      queryClient.invalidateQueries({ queryKey: ['resumen'] });
         }
 
     })

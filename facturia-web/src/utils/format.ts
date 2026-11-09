@@ -12,3 +12,9 @@ export function formatDate(value: string | null): string {
     timeZone: 'UTC',
   }).format(new Date(`${value}T00:00:00Z`));
 }
+
+export function formatMonth(value: string): string {
+  return new Intl.DateTimeFormat('es-CO', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(`${value}-01T00:00:00Z`),
+  );
+}
