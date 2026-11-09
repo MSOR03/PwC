@@ -145,7 +145,11 @@ describe('InvoiceService.register', () => {
     it('updates the invoice excluding itself from the duplicate check', async () => {
       await service.update('invoice-id', UPDATE_DATA);
 
-      expect(repository.existsActive).toHaveBeenCalledWith('ENERGIA DEL VALLE', 'FE-21877', 'invoice-id');
+      expect(repository.existsActive).toHaveBeenCalledWith(
+        'ENERGIA DEL VALLE',
+        'FE-21877',
+        'invoice-id',
+      );
       expect(repository.update).toHaveBeenCalledWith('invoice-id', {
         invoice: UPDATE_DATA,
         proveedorNormalizado: 'ENERGIA DEL VALLE',
@@ -166,7 +170,9 @@ describe('InvoiceService.register', () => {
 
     it('throws DuplicateInvoiceError when another invoice has the same number', async () => {
       repository.existsActive.mockResolvedValue(true);
-      await expect(service.update('invoice-id', UPDATE_DATA)).rejects.toThrow(DuplicateInvoiceError);
+      await expect(service.update('invoice-id', UPDATE_DATA)).rejects.toThrow(
+        DuplicateInvoiceError,
+      );
       expect(repository.update).not.toHaveBeenCalled();
     });
   });

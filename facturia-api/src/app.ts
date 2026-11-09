@@ -1,24 +1,27 @@
 import express from "express";
-import type {Container} from './container';
+import type { Container } from './container';
 import { errorHandler } from "./presentation/middlewares/errorHandler.middleware";
-import {notFound} from "./presentation/middlewares/notFound.middleware";
+import { notFound } from "./presentation/middlewares/notFound.middleware";
 import { invoiceRoutes } from "./presentation/routes/invoice.routes";
 
-export function createApp(container: Container){
-    const app=express();
+export function createApp(container: Container) {
+    const app = express();
 
     // Hide the header that reveals the technology stack
     app.disable('x-powered-by')
 
     //limit the size of incoming JSON payloads to 10MB
-    app.use(express.json({limit: '10mb'}));
-    
-    app.get('/api/health',async (_req,res)=>{
+    app.use(express.json({ limit: '10mb' }));
+
+    app.get('/api/health', async (_req, res) => {
         await container.prisma.$queryRaw`SELECT 1`;
-        res.json({status: 'ok',database:'up'});
+        res.json({ status: 'ok', database: 'up' });
     });
-    
-    app.use('/api/facturas', invoiceRoutes(container.invoiceController));
+
+    app.use(
+        '/api/facturas',
+        invoiceRoutes(container.invoiceController, container.reportController)
+    );
     //If a route is not found, use the notFound middleware
     app.use(notFound);
 

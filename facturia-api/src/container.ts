@@ -8,7 +8,8 @@ import { prisma } from './data/prisma';
 import {PrismaInvoiceRepository} from './data/repositories/prisma-invoice.repository';
 import {LocalFileStorage} from './data/storage/local-file.storage'
 import {InvoiceController} from './presentation/controllers/invoice.controller';
-
+import { ReportController } from './presentation/controllers/report.controller';
+import { ReportService } from './business/services/report.service';
 // Composition root: the only place that knows the concrete implementations.
 // Repositories, the LLM adapter and the services are wired here in issues #4 and #5.
 
@@ -27,12 +28,16 @@ export function buildContainer() {
   //business layer wiring
   const extractionService = new ExtractionService(llmClient);
   const invoiceService = new InvoiceService(invoiceRepository, extractionService, fileStorage);
-  
+   const reportService = new ReportService(invoiceRepository);
   //presentation layer wiring
-  const invoiceController = new InvoiceController(invoiceService);
   
+  const invoiceController = new InvoiceController(invoiceService);
+  const reportController = new ReportController(reportService);
+
   return {
-    prisma,invoiceController
+    prisma,
+    invoiceController,
+    reportController
   };
 }
 
