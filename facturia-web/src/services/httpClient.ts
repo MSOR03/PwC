@@ -1,7 +1,7 @@
 import axios, {type AxiosError} from "axios";
 import {ApiError,type ProblemDetails } from "../models/problemDetails";
 
-import {messageForStatus} from "../utils/errorMessage";
+import {messageForStatus} from "../utils/errorMessages";
 
 export const httpClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
